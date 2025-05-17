@@ -7,12 +7,14 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Ensures gofmt doesn't remove the "net" and "os" imports in stage 1 (feel free to remove this!)
 var _ = net.Listen
 var _ = os.Exit
 var store = make(map[string]string)
+var expirations = make(map[string]int64)
 
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -73,11 +75,17 @@ func handleConn(conn net.Conn) {
 			conn.Write([]byte(answer))
 		case "SET":
 			store[command[1]] = command[2]
+			if command[3] == "PX" {
+				expirationMilis, _ := strconv.Atoi(command[4])
+				expirations[command[1]] = time.Now().Unix() + int64(expirationMilis/1000)
+			}
 			conn.Write([]byte("+OK\r\n"))
 		case "GET":
 			if val, ok := store[command[1]]; ok {
-				conn.Write(fmt.Appendf(nil, "$%d\r\n%v\r\n", len(val), val))
-				break
+				if exp, ok := expirations[command[1]]; !ok || exp > time.Now().Unix() {
+					conn.Write(fmt.Appendf(nil, "$%d\r\n%v\r\n", len(val), val))
+					break
+				}
 			}
 			conn.Write([]byte("$-1\r\n"))
 		default:
