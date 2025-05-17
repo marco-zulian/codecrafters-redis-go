@@ -69,19 +69,19 @@ func handleConn(conn net.Conn) {
 			command[i] = string(bulkStringVal)
 		}
 
-		switch command[0] {
-		case "ECHO":
+		switch strings.ToLower(command[0]) {
+		case "echo":
 			answer := fmt.Sprintf("$%d\r\n%v\r\n", len(command[1]), command[1])
 			conn.Write([]byte(answer))
-		case "SET":
-			if len(command) > 3 && command[3] == "PX" {
+		case "set":
+			if len(command) > 3 && strings.ToLower(command[3]) == "px" {
 				expirationMilis, _ := strconv.Atoi(command[4])
 				expirations[command[1]] = time.Now().UnixMilli() + int64(expirationMilis)
 			}
 
 			store[command[1]] = command[2]
 			conn.Write([]byte("+OK\r\n"))
-		case "GET":
+		case "get":
 			if val, ok := store[command[1]]; ok {
 				if exp, ok := expirations[command[1]]; !ok || exp > time.Now().UnixMilli() {
 					conn.Write(fmt.Appendf(nil, "$%d\r\n%v\r\n", len(val), val))
