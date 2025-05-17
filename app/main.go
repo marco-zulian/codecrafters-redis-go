@@ -83,7 +83,7 @@ func handleConn(conn net.Conn) {
 			conn.Write([]byte("+OK\r\n"))
 		case "GET":
 			if val, ok := store[command[1]]; ok {
-				if exp, ok := expirations[command[1]]; !ok || exp > time.Now().Unix() {
+				if exp, ok := expirations[command[1]]; !ok || exp > time.Now().UnixMilli() {
 					conn.Write(fmt.Appendf(nil, "$%d\r\n%v\r\n", len(val), val))
 					break
 				}
