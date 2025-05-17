@@ -74,11 +74,12 @@ func handleConn(conn net.Conn) {
 			answer := fmt.Sprintf("$%d\r\n%v\r\n", len(command[1]), command[1])
 			conn.Write([]byte(answer))
 		case "SET":
-			store[command[1]] = command[2]
-			if command[3] == "PX" {
+			if len(command) > 3 && command[3] == "PX" {
 				expirationMilis, _ := strconv.Atoi(command[4])
-				expirations[command[1]] = time.Now().Unix() + int64(expirationMilis/1000)
+				expirations[command[1]] = time.Now().UnixMilli() + int64(expirationMilis)
 			}
+
+			store[command[1]] = command[2]
 			conn.Write([]byte("+OK\r\n"))
 		case "GET":
 			if val, ok := store[command[1]]; ok {
